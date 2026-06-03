@@ -30,7 +30,7 @@
         <div class="panel-row">
             <div class="panel">
                 <h2>Input Nomor</h2>
-                <textarea id="phoneInput" placeholder="Masukkan nomor telepon (contoh: +6281234567890 atau 081234567890)" rows="8"></textarea>
+                <textarea id="phoneInput" placeholder="Masukkan nomor telepon (contoh: +6281234567890, 6281234567890, atau 081234567890)" rows="8"></textarea>
                 <div class="panel-actions">
                     <button class="btn-action" id="checkBtn" disabled>SETUJU</button>
                 </div>
@@ -140,7 +140,7 @@
             let cleaned = String(value).trim().replace(/[^+\d]/g, '');
             if (!cleaned) return null;
 
-            if (cleaned.startsWith('+')) {
+            if (cleaned.startsWith('+62')) {
                 return cleaned;
             }
             if (cleaned.startsWith('62')) {
@@ -152,7 +152,7 @@
             if (/^8\d{7,11}$/.test(cleaned)) {
                 return '+62' + cleaned;
             }
-            return cleaned;
+            return null;
         }
 
         checkBtn.addEventListener('click', async () => {
