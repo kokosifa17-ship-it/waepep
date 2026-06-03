@@ -11,7 +11,7 @@
         <div class="header">
             <h1>WA <span class="accent">TOOLS WHATSAPP OTP</span></h1>
             <p class="subtitle">Masukkan nomor telepon, lihat hasil cek bio langsung, dan salin semua hasil secara cepat.</p>
-            <p class="note">Catatan: maksimal pengecekan adalah 0-200 nomor per sesi.</p>
+            <p class="note">Catatan: maksimal pengecekan adalah 200 nomor per sesi. Format yang didukung: +62, 62, atau 0xxxx.</p>
             <div class="status-card">
                 <h3>Status WhatsApp</h3>
                 <p id="waStatusText">Memuat status WhatsApp...</p>
@@ -30,7 +30,7 @@
         <div class="panel-row">
             <div class="panel">
                 <h2>Input Nomor</h2>
-                <textarea id="phoneInput" placeholder="Masukkan nomor telepon (contoh: 081234567890)" rows="8"></textarea>
+                <textarea id="phoneInput" placeholder="Masukkan nomor telepon (contoh: +6281234567890 atau 081234567890)" rows="8"></textarea>
                 <div class="panel-actions">
                     <button class="btn-action" id="checkBtn" disabled>SETUJU</button>
                 </div>
@@ -136,6 +136,25 @@
             statusInterval = setInterval(updateWhatsAppStatus, 5000);
         }
 
+        function normalizePhoneNumber(value) {
+            let cleaned = String(value).trim().replace(/[^+\d]/g, '');
+            if (!cleaned) return null;
+
+            if (cleaned.startsWith('+')) {
+                return cleaned;
+            }
+            if (cleaned.startsWith('62')) {
+                return '+' + cleaned;
+            }
+            if (cleaned.startsWith('0')) {
+                return '+62' + cleaned.slice(1);
+            }
+            if (/^8\d{7,11}$/.test(cleaned)) {
+                return '+62' + cleaned;
+            }
+            return cleaned;
+        }
+
         checkBtn.addEventListener('click', async () => {
             if (!isWhatsAppReady) {
                 alert('WhatsApp belum siap. Scan QR di halaman dan tunggu sampai status siap.');
@@ -148,14 +167,23 @@
                 return;
             }
 
+            const numbers = inputText
+                .split(/[\r\n,;]+/)
+                .map(line => normalizePhoneNumber(line))
+                .filter(Boolean);
+
+            if (numbers.length === 0) {
+                alert('Masukkan nomor telepon yang valid.');
+                return;
+            }
+            if (numbers.length > 200) {
+                alert('Maksimal 200 nomor per sesi. Kurangi jumlah nomor Anda.');
+                return;
+            }
+
             checkBtn.disabled = true;
             checkBtn.textContent = 'Tunggu...';
             resultOutput.value = '';
-
-            const numbers = inputText
-                .split(/[\r\n,;]/)
-                .map(line => line.trim())
-                .filter(Boolean);
 
             try {
                 console.log('Sending request dengan numbers:', numbers);
