@@ -187,10 +187,24 @@ app.post('/api/check-numbers', async (req, res) => {
       });
     }
 
+    if (numbers.length > 200) {
+      console.log('Input lebih dari 200 nomor');
+      return res.status(400).json({
+        success: false,
+        error: 'Maksimal 200 nomor per request.',
+        results: [],
+        checked: 0,
+        registered: 0,
+        notRegistered: 0,
+      });
+    }
+
     console.log('Mulai cek', numbers.length, 'nomor...');
     const results = [];
     let successCount = 0;
     let failCount = 0;
+
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
     for (let i = 0; i < numbers.length; i++) {
       const number = numbers[i];
@@ -199,25 +213,29 @@ app.post('/api/check-numbers', async (req, res) => {
       if (!cleaned) {
         failCount++;
         results.push({ input: number, registered: false, cleaned: '' });
-        continue;
-      }
-
-      let registered = false;
-      try {
-        console.log(`[${i+1}/${numbers.length}] Cek: ${cleaned}`);
-        const id = await client.getNumberId(cleaned);
-        registered = id !== null;
-        console.log(`  Result: ${registered ? 'FOUND' : 'NOT FOUND'}`);
-      } catch (err) {
-        console.log(`  Error: ${err.message}`);
-        registered = false;
-      }
-
-      results.push({ input: number, cleaned, registered });
-      if (registered) {
-        successCount++;
       } else {
-        failCount++;
+        let registered = false;
+        try {
+          console.log(`[${i+1}/${numbers.length}] Cek: ${cleaned}`);
+          const id = await client.getNumberId(cleaned);
+          registered = id !== null;
+          console.log(`  Result: ${registered ? 'FOUND' : 'NOT FOUND'}`);
+        } catch (err) {
+          console.log(`  Error: ${err.message}`);
+          registered = false;
+        }
+
+        results.push({ input: number, cleaned, registered });
+        if (registered) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      }
+
+      if ((i + 1) % 5 === 0 && i + 1 < numbers.length) {
+        console.log('Menunggu 2 detik sebelum melanjutkan...');
+        await delay(2000);
       }
     }
 
