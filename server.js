@@ -155,23 +155,36 @@ app.post('/api/initialize', (req, res) => {
   }
 });
 
+// Tambahkan potongan kode ini di dalam server.js Anda
 app.post('/api/check-numbers', async (req, res) => {
-  console.log('=== REQUEST MASUK ===');
-  
-  try {
     const { numbers } = req.body;
-    console.log('Numbers:', numbers);
+    let registeredCount = 0;
+    let notRegisteredCount = 0;
+    
+    const results = await Promise.all(numbers.map(async (number) => {
+        try {
+            // WhatsApp Web API membutuhkan format nomor tanpa '+'
+            const formattedNumber = number.replace('+', '') + '@c.us';
+            
+            // Mencoba mengecek apakah nomor terdaftar
+            const isRegistered = await client.isRegisteredUser(formattedNumber);
+            
+            if (isRegistered) registeredCount++;
+            else notRegisteredCount++;
 
-    if (!isClientReady) {
-      console.log('WhatsApp tidak ready');
-      return res.status(400).json({
-        success: false,
-        error: 'WhatsApp tidak siap. Scan QR dari halaman web atau tunggu sampai siap.',
-        results: [],
-        checked: 0,
-        registered: 0,
-        notRegistered: 0,
-      });
+            return { input: number, registered: isRegistered };
+        } catch (e) {
+            return { input: number, registered: false };
+        }
+    }));
+
+    res.json({
+        success: true,
+        results,
+        registered: registeredCount,
+        notRegistered: notRegisteredCount
+    });
+});
     }
 
     // Validasi input
