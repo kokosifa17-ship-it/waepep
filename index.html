@@ -2,274 +2,89 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>WhatsApp OTP | Premium Tools</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Checker Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 p-4 md:p-10">
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-xl shadow-md">
+        <h1 class="text-2xl font-bold mb-4">WhatsApp Number Checker</h1>
+        
+        <div id="status" class="p-3 mb-4 rounded font-semibold text-center border">Memeriksa status bot...</div>
 
-    <div class="container">
-        <div class="header">
-            <h1>WA <span class="accent">TOOLS WHATSAPP OTP</span></h1>
-            <p class="subtitle">Masukkan nomor telepon, lihat hasil cek bio langsung, dan salin semua hasil secara cepat.</p>
-            <p class="note">Catatan: maksimal pengecekan adalah 200 nomor per sesi. Format yang didukung: +62, 62, atau 0xxxx.</p>
-            <div class="status-card">
-                <h3>Status WhatsApp</h3>
-                <p id="waStatusText">Memuat status WhatsApp...</p>
-                <div id="qrSection" style="display:none; margin-top: 16px;">
-                    <p><strong>Scan QR di bawah dengan WhatsApp Anda:</strong></p>
-                    <div style="text-align: center; background: #020617; padding: 20px; border-radius: 12px; margin-bottom: 12px;">
-                        <img id="qrImage" alt="QR Code WhatsApp" style="width:240px; height:240px; display:block; margin: 0 auto;" />
-                    </div>
-                    <p style="color: #94a3b8; font-size: 0.9rem; text-align: center; margin: 12px 0;">atau copy payload di bawah:</p>
-                    <textarea id="qrPayload" readonly placeholder="QR payload akan muncul di sini" rows="2" style="width:100%; font-size: 12px;"></textarea>
-                </div>
-                <button id="initBtn" style="display:none; width: 100%; padding: 12px; margin-top: 12px; background: #0ea5e9; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Inisialisasi WhatsApp</button>
-            </div>
-        </div>
+        <textarea id="numbersInput" class="w-full h-32 p-3 border rounded mb-4" placeholder="Masukkan nomor (Contoh: 08123456789, satu per baris)"></textarea>
+        
+        <button onclick="checkNumbers()" id="checkBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded transition">
+            Mulai Cek Nomor
+        </button>
 
-        <div class="panel-row">
-            <div class="panel">
-                <h2>Input Nomor</h2>
-                <textarea id="phoneInput" placeholder="Masukkan nomor telepon (contoh: +6281234567890, 6281234567890, atau 081234567890)" rows="8"></textarea>
-                <div class="panel-actions">
-                    <button class="btn-action" id="checkBtn" disabled>SETUJU</button>
-                </div>
+        <div id="resultSection" class="mt-6 hidden">
+            <div class="flex justify-between items-center mb-2">
+                <h2 class="font-bold">Hasil Pengecekan:</h2>
+                <button onclick="exportCSV()" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">Download CSV</button>
             </div>
-            <div class="panel">
-                <div class="result-header">
-                    <h2>Hasil Cek Bio</h2>
-                    <button class="btn-copy" id="copyResultsBtn">Salin Semua</button>
-                </div>
-                <textarea id="resultOutput" readonly placeholder="Hasil cek bio akan muncul di sini..." rows="8"></textarea>
-
-                <div class="history-card">
-                    <div class="history-title">
-                        <h3>Riwayat Cek Bio</h3>
-                    </div>
-                    <div class="history-stats">
-                        <div class="history-item">
-                            <span id="successCount">0</span>
-                            <small>Berhasil</small>
-                        </div>
-                        <div class="history-item fail">
-                            <span id="failCount">0</span>
-                            <small>Gagal</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <table class="w-full border-collapse border mt-2">
+                <thead>
+                    <tr class="bg-gray-200">
+                        <th class="border p-2">Nomor</th>
+                        <th class="border p-2">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="resultTable"></tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        const phoneInput = document.getElementById('phoneInput');
-        const resultOutput = document.getElementById('resultOutput');
-        const checkBtn = document.getElementById('checkBtn');
-        const copyBtn = document.getElementById('copyResultsBtn');
-        const waStatusText = document.getElementById('waStatusText');
-        const qrSection = document.getElementById('qrSection');
-        const qrImage = document.getElementById('qrImage');
-        const qrPayload = document.getElementById('qrPayload');
-        const initBtn = document.getElementById('initBtn');
+        let latestResults = [];
 
-        let isWhatsAppReady = false;
-        let isInitializing = false;
-        let statusInterval = null;
-
-        async function updateWhatsAppStatus() {
-            try {
-                const response = await fetch('/api/status');
-                const data = await response.json();
-                isWhatsAppReady = Boolean(data.ready);
-
-                if (data.ready) {
-                    waStatusText.textContent = '✓ ' + (data.message || 'WhatsApp siap');
-                    waStatusText.style.color = '#10b981';
-                    qrSection.style.display = 'none';
-                    initBtn.style.display = 'none';
-                } else {
-                    waStatusText.textContent = data.error || 'WhatsApp sedang diinisialisasi...';
-                    waStatusText.style.color = '#f59e0b';
-                    if (data.qrAvailable) {
-                        await loadWhatsAppQr();
-                    } else {
-                        qrSection.style.display = 'none';
-                        if (!isInitializing) {
-                            initBtn.style.display = 'block';
-                        }
-                    }
-                }
-
-                checkBtn.disabled = !isWhatsAppReady;
-            } catch (err) {
-                console.error('Status error:', err);
-                waStatusText.textContent = 'Gagal memuat status WhatsApp.';
-                waStatusText.style.color = '#ef4444';
-                qrSection.style.display = 'none';
-                isWhatsAppReady = false;
-                checkBtn.disabled = true;
-            }
+        async function updateStatus() {
+            const res = await fetch('/api/status');
+            const data = await res.json();
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = data.message;
+            statusDiv.className = `p-3 mb-4 rounded font-semibold text-center border ${data.ready ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`;
         }
 
-        async function loadWhatsAppQr() {
-            try {
-                const response = await fetch('/api/qr');
-                const data = await response.json();
-                if (data.qr) {
-                    qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(data.qr)}`;
-                    qrPayload.value = data.qr;
-                    qrSection.style.display = 'block';
-                } else {
-                    qrSection.style.display = 'none';
-                }
-            } catch (err) {
-                console.error('QR load error:', err);
-                qrSection.style.display = 'none';
-            }
+        async function checkNumbers() {
+            const input = document.getElementById('numbersInput').value.split('\n').filter(n => n.trim() !== "");
+            if(input.length === 0) return alert("Masukkan nomor dulu!");
+            
+            const btn = document.getElementById('checkBtn');
+            btn.innerText = "Memproses..."; btn.disabled = true;
+
+            const res = await fetch('/api/check-numbers', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ numbers: input })
+            });
+
+            const data = await res.json();
+            latestResults = data.results;
+            
+            const table = document.getElementById('resultTable');
+            table.innerHTML = "";
+            latestResults.forEach(r => {
+                table.innerHTML += `<tr>
+                    <td class="border p-2">${r.input}</td>
+                    <td class="border p-2 font-bold ${r.registered ? 'text-green-600' : 'text-red-600'}">
+                        ${r.registered ? 'Aktif' : 'Tidak Terdaftar'}
+                    </td>
+                </tr>`;
+            });
+            document.getElementById('resultSection').classList.remove('hidden');
+            btn.innerText = "Mulai Cek Nomor"; btn.disabled = false;
         }
 
-        async function initWhatsAppPolling() {
-            await updateWhatsAppStatus();
-            if (statusInterval) {
-                clearInterval(statusInterval);
-            }
-            statusInterval = setInterval(updateWhatsAppStatus, 5000);
+        function exportCSV() {
+            let csv = "Nomor,Status\n" + latestResults.map(r => `${r.input},${r.registered ? 'Aktif' : 'Tidak'}`).join("\n");
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = "hasil_cek.csv"; a.click();
         }
 
-        function normalizePhoneNumber(value) {
-            let cleaned = String(value).trim().replace(/[^+\d]/g, '');
-            if (!cleaned) return null;
-
-            if (cleaned.startsWith('+62')) {
-                return cleaned;
-            }
-            if (cleaned.startsWith('62')) {
-                return '+' + cleaned;
-            }
-            if (cleaned.startsWith('0')) {
-                return '+62' + cleaned.slice(1);
-            }
-            if (/^8\d{7,11}$/.test(cleaned)) {
-                return '+62' + cleaned;
-            }
-            return null;
-        }
-
-        checkBtn.addEventListener('click', async () => {
-            if (!isWhatsAppReady) {
-                alert('WhatsApp belum siap. Scan QR di halaman dan tunggu sampai status siap.');
-                return;
-            }
-
-            const inputText = phoneInput.value.trim();
-            if (!inputText) {
-                alert('Masukkan nomor telepon');
-                return;
-            }
-
-            const numbers = inputText
-                .split(/[\r\n,;]+/)
-                .map(line => normalizePhoneNumber(line))
-                .filter(Boolean);
-
-            if (numbers.length === 0) {
-                alert('Masukkan nomor telepon yang valid.');
-                return;
-            }
-            if (numbers.length > 200) {
-                alert('Maksimal 200 nomor per sesi. Kurangi jumlah nomor Anda.');
-                return;
-            }
-
-            checkBtn.disabled = true;
-            checkBtn.textContent = 'Tunggu...';
-            resultOutput.value = '';
-
-            try {
-                console.log('Sending request dengan numbers:', numbers);
-                const response = await fetch('/api/check-numbers', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ numbers })
-                });
-
-                console.log('Response status:', response.status);
-                const text = await response.text();
-                console.log('Response text:', text);
-
-                if (!text) {
-                    throw new Error(`Server memberi respons kosong (${response.status})`);
-                }
-
-                let data;
-                try {
-                    data = JSON.parse(text);
-                } catch (parseError) {
-                    throw new Error(`Respons server bukan JSON: ${text}`);
-                }
-
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || `Gagal proses (${response.status})`);
-                }
-
-                if (!data.results || !Array.isArray(data.results)) {
-                    throw new Error('Format response salah');
-                }
-
-                const hasil = data.results.map((item, i) => {
-                    const status = item.registered ? '✓' : '✗';
-                    return `${i + 1}. ${item.input} [${status}]`;
-                });
-
-                resultOutput.value = hasil.join('\n');
-                document.getElementById('successCount').textContent = data.registered || 0;
-                document.getElementById('failCount').textContent = data.notRegistered || 0;
-                alert(`Selesai! ${data.registered} terdaftar, ${data.notRegistered} tidak terdaftar`);
-            } catch (err) {
-                console.error('Fetch error:', err);
-                alert('Error: ' + err.message);
-                resultOutput.value = 'Error: ' + err.message;
-            } finally {
-                checkBtn.disabled = !isWhatsAppReady;
-                checkBtn.textContent = 'SETUJU';
-            }
-        });
-
-        copyBtn.addEventListener('click', async () => {
-            if (!resultOutput.value.trim()) {
-                alert('Tidak ada hasil untuk disalin.');
-                return;
-            }
-            try {
-                await navigator.clipboard.writeText(resultOutput.value);
-                copyBtn.textContent = 'Tersalin!';
-                setTimeout(() => (copyBtn.textContent = 'Salin Semua'), 1500);
-            } catch (error) {
-                alert('Gagal menyalin ke clipboard.');
-            }
-        });
-
-        initBtn.addEventListener('click', async () => {
-            isInitializing = true;
-            initBtn.style.display = 'none';
-            initBtn.textContent = 'Inisialisasi...';
-            try {
-                const response = await fetch('/api/initialize', { method: 'POST' });
-                const data = await response.json();
-                console.log('Initialize response:', data);
-                waStatusText.textContent = 'Menunggu inisialisasi WhatsApp...';
-                await updateWhatsAppStatus();
-            } catch (err) {
-                console.error('Initialize error:', err);
-                waStatusText.textContent = 'Error inisialisasi: ' + err.message;
-            } finally {
-                isInitializing = false;
-                initBtn.textContent = 'Inisialisasi WhatsApp';
-            }
-        });
-
-        initWhatsAppPolling();
+        updateStatus();
     </script>
-
 </body>
 </html>

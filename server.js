@@ -2,68 +2,52 @@ const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+
 const app = express();
 const port = process.env.PORT || 3000;
+const sessionDir = path.join(__dirname, 'whatsapp-session');
 
-// Konfigurasi Client
-const sessionDir = process.env.SESSION_DIR || path.join(__dirname, 'whatsapp-session');
 const client = new Client({
-    authStrategy: new LocalAuth({ clientId: 'wa-check', dataPath: sessionDir }),
-    puppeteer: {
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--no-first-run', '--disable-gpu']
-    }
+  authStrategy: new LocalAuth({ clientId: 'wa-check', dataPath: sessionDir }),
+  puppeteer: {
+    headless: true, // Ubah ke false jika ingin melihat browser
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  }
 });
 
-let isClientReady = false;
-let latestQRCode = null;
+client.on('qr', (qr) => {
+  console.log('SCAN QR CODE DI BAWAH INI DENGAN WHATSAPP ANDA:');
+  qrcode.generate(qr, { small: true });
+});
 
-client.on('ready', () => { isClientReady = true; console.log('✓ WhatsApp Client SIAP!'); });
-client.on('qr', (qr) => { latestQRCode = qr; });
-client.on('disconnected', () => { isClientReady = false; });
-client.initialize().catch(console.error);
+client.on('ready', () => console.log('✓ WhatsApp Client SIAP!'));
+client.on('auth_failure', (msg) => console.error('✗ Auth gagal:', msg));
+
+client.initialize();
 
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// API Status & QR
-app.get('/api/status', (req, res) => {
-    res.json({ ready: isClientReady, qrAvailable: Boolean(latestQRCode) });
-});
-app.get('/api/qr', (req, res) => { res.json({ qr: latestQRCode }); });
-
-// API Cek Nomor (Internasional Support)
 app.post('/api/check-numbers', async (req, res) => {
+  try {
     const { numbers } = req.body;
-    if (!numbers || !Array.isArray(numbers)) return res.status(400).json({ error: 'Input tidak valid' });
-
     const results = [];
-    let registeredCount = 0;
-    let notRegisteredCount = 0;
-
     for (let i = 0; i < numbers.length; i++) {
-        // Membersihkan input: hanya ambil angka, buang karakter lain
-        const raw = String(numbers[i]).trim();
-        const cleaned = raw.replace(/[^0-9]/g, '');
-        
-        try {
-            // Cek ke WhatsApp dengan format lengkap
-            const isRegistered = await client.isRegisteredUser(cleaned + '@c.us');
-            results.push({ input: raw, registered: isRegistered });
-            
-            if (isRegistered) registeredCount++;
-            else notRegisteredCount++;
-        } catch (e) {
-            results.push({ input: raw, registered: false });
-            notRegisteredCount++;
-        }
-
-        // Delay 1.5 detik per nomor agar tidak diblokir
-        await new Promise(r => setTimeout(r, 1500));
+      let cleaned = String(numbers[i]).replace(/\D/g, '');
+      if (cleaned.startsWith('0')) cleaned = '62' + cleaned.substring(1);
+      
+      let registered = false;
+      try {
+        const id = await client.getNumberId(cleaned);
+        registered = id !== null;
+      } catch (err) { registered = false; }
+      
+      results.push({ input: numbers[i], registered });
+      if ((i + 1) % 5 === 0) await new Promise(r => setTimeout(r, 1000));
     }
-
-    res.json({ success: true, results, registered: registeredCount, notRegistered: notRegisteredCount });
+    res.json({ success: true, results });
+  } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.listen(port, () => console.log(`Server berjalan di port ${port}`));
+app.listen(port, () => console.log(`Server jalan di http://localhost:${port}`))

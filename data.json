@@ -1,0 +1,168 @@
+{
+  "records": [
+    {
+      "timestamp": "2026-06-06T18:00:19.338Z",
+      "results": [
+        {
+          "input": "6285281803715",
+          "cleaned": "6285281803715",
+          "registered": true
+        }
+      ],
+      "successCount": 1
+    },
+    {
+      "timestamp": "2026-06-06T18:00:48.896Z",
+      "results": [
+        {
+          "input": "+237620013004",
+          "cleaned": "+237620013004",
+          "registered": false
+        },
+        {
+          "input": "+237620013005",
+          "cleaned": "+237620013005",
+          "registered": false
+        },
+        {
+          "input": "+237620013006",
+          "cleaned": "+237620013006",
+          "registered": false
+        },
+        {
+          "input": "+237620013007",
+          "cleaned": "+237620013007",
+          "registered": false
+        },
+        {
+          "input": "+237620013008",
+          "cleaned": "+237620013008",
+          "registered": false
+        },
+        {
+          "input": "+237620013009",
+          "cleaned": "+237620013009",
+          "registered": false
+        },
+        {
+          "input": "+237620013010",
+          "cleaned": "+237620013010",
+          "registered": false
+        },
+        {
+          "input": "+237620013011",
+          "cleaned": "+237620013011",
+          "registered": false
+        },
+        {
+          "input": "+237620013012",
+          "cleaned": "+237620013012",
+          "registered": false
+        },
+        {
+          "input": "+237620013013",
+          "cleaned": "+237620013013",
+          "registered": false
+        },
+        {
+          "input": "+237620013014",
+          "cleaned": "+237620013014",
+          "registered": false
+        },
+        {
+          "input": "+237620013015",
+          "cleaned": "+237620013015",
+          "registered": false
+        },
+        {
+          "input": "+237620013016",
+          "cleaned": "+237620013016",
+          "registered": false
+        }
+      ],
+      "successCount": 0
+    },
+    {
+      "timestamp": "2026-06-06T18:01:18.342Z",
+      "results": [
+        {
+          "input": "6285281803715",
+          "cleaned": "6285281803715",
+          "registered": true
+        }
+      ],
+      "successCount": 1
+    },
+    {
+      "timestamp": "2026-06-06T18:01:27.232Z",
+      "results": [
+        {
+          "input": "+6285281803715",
+          "cleaned": "+6285281803715",
+          "registered": false
+        }
+      ],
+      "successCount": 0
+    },
+    {
+      "timestamp": "2026-06-06T18:01:29.383Z",
+      "results": [
+        {
+          "input": "+6285281803715",
+          "cleaned": "+6285281803715",
+          "registered": false
+        }
+      ],
+      "successCount": 0
+    },
+    {
+      "timestamp": "2026-06-06T18:03:31.993Z",
+      "results": [
+        {
+          "input": "+6285281803715",
+          "cleaned": "+6285281803715",
+          "registered": false
+        }
+      ],
+      "successCount": 0
+    },
+    {
+      "timestamp": "2026-06-06T18:03:34.808Z",
+      "results": [
+        {
+          "input": "+6285281803715",
+          "cleaned": "+6285281803715",
+          "registered": false
+        }
+      ],
+      "successCount": 0
+    },
+    {
+      "timestamp": "2026-06-06T18:03:35.731Z",
+      "results": [
+        {
+          "input": "+6285281803715",
+          "cleaned": "+6285281803715",
+          "registered": false
+        }
+      ],
+      "successCount": 0
+    },
+    {
+      "timestamp": "2026-06-06T18:03:36.648Z",
+      "results": [
+        {
+          "input": "+6285281803715",
+          "cleaned": "+6285281803715",
+          "registered": false
+        }
+      ],
+      "successCount": 0
+    }
+  ],
+  "totals": {
+    "users": {},
+    "countries": {}
+  },
+  "updatedAt": "2026-06-06T18:03:36.648Z"
+}
